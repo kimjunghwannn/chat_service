@@ -18,7 +18,6 @@ public class ChatHandler extends TextWebSocketHandler
 {
     private static final Map<Long, Set<WebSocketSession>> rooms = new HashMap<>();
     private final Map<Long, List<String>> hotChatMessageBuffer = new ConcurrentHashMap<>();
-    private final Map<Long, ScheduledFuture<?>> flushTasks = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     @Override
@@ -31,21 +30,25 @@ public class ChatHandler extends TextWebSocketHandler
         log.info("{} 유저 연결됨", userId);
     }
 
+    public void addHotChatMessage(Long chatRoomId, String message)
+    {
+        hotChatMessageBuffer.computeIfAbsent(chatRoomId, k -> new ArrayList<>()).add(message);
+    }
 
-    public void handleTextMessage(Long chatRoomId, String message,boolean isHotChat) throws IOException {
+    public void handleTextMessage(Long chatRoomId, String message,boolean isHotChat) throws IOException, InterruptedException {
         log.info("사용자로부터 메시지 수신: {}", message);
         if(isHotChat)
         {
-            hotChatMessageBuffer.computeIfAbsent(chatRoomId, k -> new ArrayList<>()).add(message);
-            flushTasks.computeIfAbsent(chatRoomId, id -> {
-                return scheduler.schedule(() -> {
-                    try {
-                        flushHotChatMessages(chatRoomId);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }, 1, TimeUnit.SECONDS);
-            });
+            hotChatMessageBuffer.computeIfAbsent(chatRoomId, k -> Collections.synchronizedList(new ArrayList<>()))
+                    .add(message);
+
+            scheduler.schedule(() -> {
+                try {
+                    flushHotChatMessages(chatRoomId);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }, 1, TimeUnit.SECONDS);
         }
 
         else {
@@ -53,11 +56,16 @@ public class ChatHandler extends TextWebSocketHandler
         }
 
     }
-    private void flushHotChatMessages(Long chatRoomId) throws IOException {
+    public void flushHotChatMessages(Long chatRoomId) throws IOException {
         List<String> messages = hotChatMessageBuffer.remove(chatRoomId);
-        flushTasks.remove(chatRoomId);
 
-        if (messages == null || messages.isEmpty()) return;
+        if (messages == null || messages.isEmpty()) {
+            log.info("flush 실행 - chatRoomId: {}, 메시지 없음", chatRoomId);
+            return;
+        }
+
+        log.info("flush 실행 - chatRoomId: {}, 메시지 수: {}", chatRoomId, messages.size());
+
 
        for (String message : messages)
            broadcastMessage(chatRoomId,message);
@@ -67,13 +75,17 @@ public class ChatHandler extends TextWebSocketHandler
         if (sessions == null) return;
 
         for (WebSocketSession session : sessions) {
+            log.info("사용자에게 메시지를 보냅니다: {}     {}", message, session);
             sendMessage(session, message);
         }
     }
 
     public void sendMessage(WebSocketSession session, String message) throws IOException {
-        if (session != null && session.isOpen()) {
-            session.sendMessage(new TextMessage(message));
+        synchronized (session) {
+            if (session.isOpen())
+            {
+                session.sendMessage(new TextMessage(message));
+            }
         }
     }
 
