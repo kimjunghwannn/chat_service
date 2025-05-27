@@ -22,5 +22,5 @@
 
 <br>
 
-![image](https://github.com/user-attachments/assets/f696e344-b00e-40be-9341-083e12533bfd)
+![image](https://github.com/user-attachments/assets/094166b3-fe0e-4bbf-bbb4-6c7e96890e37)
 ### 해당 채팅방 메시지를 remove()하여 버퍼에서 제거하여 동시에 여러 flush가 발생하지 않도록 remove() 기반으로 중복 방지
