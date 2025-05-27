@@ -35,12 +35,11 @@ public class ChatService {
             boolean isHotChat=false;
             Long count = redisTemplate.opsForValue().increment(key);
 
-            if (count == 1) {
-
+            if(count == 1)
                 redisTemplate.expire(key, Duration.ofSeconds(1));
-            }
             if(count>=5)
                 isHotChat=true;
+
             String message = chatMessageDto.senderName()+": "+ chatMessageDto.payload();
             chatHandler.handleTextMessage(chatRoomId, message,isHotChat);
 

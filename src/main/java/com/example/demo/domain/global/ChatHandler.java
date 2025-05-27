@@ -67,8 +67,8 @@ public class ChatHandler extends TextWebSocketHandler
         log.info("flush 실행 - chatRoomId: {}, 메시지 수: {}", chatRoomId, messages.size());
 
 
-       for (String message : messages)
-           broadcastMessage(chatRoomId,message);
+        String batchedMessage = String.join("\n", messages);
+        broadcastMessage(chatRoomId, batchedMessage);
     }
     public void broadcastMessage(Long chatRoomId, String message) throws IOException {
         Set<WebSocketSession> sessions = rooms.get(chatRoomId);
