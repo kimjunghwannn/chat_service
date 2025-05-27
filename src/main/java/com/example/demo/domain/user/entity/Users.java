@@ -30,4 +30,9 @@ public class Users
     @JoinColumn(name ="chat_room_id")
     @JsonBackReference
     private ChatRoom  chatRoom;
+
+    public void setChatRoom(ChatRoom chatRoom)
+    {
+        this.chatRoom = chatRoom;
+    }
 }
