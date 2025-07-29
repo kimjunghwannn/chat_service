@@ -50,7 +50,7 @@ public class ChatService {
     }
 
     @Transactional
-    public void createChatRoom(CreateChatDto createChatDto)
+    public Long createChatRoom(CreateChatDto createChatDto)
     {
         Users user = userService.findById(createChatDto.userId());
         ChatRoom chatRoom = ChatRoom.builder().build();
@@ -58,6 +58,6 @@ public class ChatService {
         chatRoom.getMembers().add(user);
         user.setChatRoom(chatRoom);
 
-        chatRoomRepository.save(chatRoom);
+        return chatRoomRepository.save(chatRoom).getId();
     }
 }

@@ -10,21 +10,26 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
 public class ChatHandler extends TextWebSocketHandler
 {
-    private static final Map<Long, Set<WebSocketSession>> rooms = new HashMap<>();
+    private static final Map<Long, Set<WebSocketSession>> rooms = new ConcurrentHashMap<>();
     private final Map<Long, List<String>> hotChatMessageBuffer = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
+    public void afterConnectionEstablished(WebSocketSession session)
+    {
+
+
         Long chatRoomId = getChatRoomId(session);
         Long userId= getUserId(session);
-        rooms.computeIfAbsent(chatRoomId, k -> new HashSet<>()).add(session);
+        rooms.computeIfAbsent(chatRoomId, k -> ConcurrentHashMap.newKeySet()).add(session);
 
         log.info("{} 연결됨", session.getId());
         log.info("{} 유저 연결됨", userId);
@@ -35,7 +40,8 @@ public class ChatHandler extends TextWebSocketHandler
         hotChatMessageBuffer.computeIfAbsent(chatRoomId, k -> new ArrayList<>()).add(message);
     }
 
-    public void handleTextMessage(Long chatRoomId, String message,boolean isHotChat) throws IOException, InterruptedException {
+    public void handleTextMessage(Long chatRoomId, String message,boolean isHotChat) throws IOException
+    {
         log.info("사용자로부터 메시지 수신: {}", message);
         if(isHotChat)
         {

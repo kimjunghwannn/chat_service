@@ -2,6 +2,7 @@ package com.example.demo.domain.chats.presentation;
 
 import com.example.demo.domain.chats.application.ChatService;
 import com.example.demo.domain.chats.dto.ChatMessageDto;
+import com.example.demo.domain.chats.dto.CreateChatDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,4 +24,9 @@ public class ChatController
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/create")
+    public ResponseEntity<Long> createChatRoom(@RequestBody CreateChatDto createChatDto)
+    {
+        return ResponseEntity.ok(chatService.createChatRoom(createChatDto));
+    }
 }
